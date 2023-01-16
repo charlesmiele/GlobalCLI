@@ -1,6 +1,6 @@
-# Global Cost of Living Data Science Project
+# Global Cost of Living
 
-By Charles Miele, Sahas Chinni, Ranak Bansal, and Mehar Poreddy
+Data Science Project by Charles Miele, Sahas Chinni, Ranak Bansal, and Mehar Poreddy
 
 Our main goal with this project is to explore a wide variety of statistical models and discover any unique insights they can provide.
 
