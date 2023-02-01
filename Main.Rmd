@@ -1,14 +1,14 @@
 ---
 title: "Global CLI Project"
-author: "Charles"
-date: "2022-01-19"
+author: "Charles Miele"
+date: "2023-02-01"
 output:
-  pdf_document:
-    toc: yes
   html_document:
     toc: yes
     theme: united
     df_print: paged
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -18,10 +18,13 @@ library(ggplot2)
 library(dplyr)
 ```
 
-# Basic stuff
+# Data Collection
 ```{r}
 # Load data
 cli <- read.csv('cost-of-living_v2.csv')
+
+# Remove any columns with NA values
+cli <- cli[complete.cases(cli), ]
 
 dim(cli)
 
@@ -33,7 +36,7 @@ gt::gt(descriptions)
 ```
 
 
-# PCA
+# Principal-Component Analysis
 
 ## Setup
 ```{r}
@@ -77,9 +80,9 @@ s_plot <- function(d){
 }
 ```
 
-## First one
+## Which cities are most similar?
 ```{r}
-PCA.data <- cli[complete.cases(cli), ]
+PCA.data <- cli
 row.names(PCA.data) <- paste(PCA.data$city, PCA.data$country, sep = ", ")
 
 PCA.data <- subset(PCA.data, select=-c(city, country))
@@ -95,7 +98,7 @@ load_scores(PCA.1, 2, TRUE)
 load_scores(PCA.1, 3, TRUE)
 ```
 
-## Second one
+## Which metrics are most similar?
 ```{r}
 PCA.data2 <- t(data.matrix(PCA.data))
 PCA.data2 <- t(apply(PCA.data2, 1, function(x)(x-min(x))/(max(x)-min(x))))
@@ -109,4 +112,42 @@ pca.gg(PCA.2, 1, 2)
 load_scores(PCA.2, 1, FALSE)
 # PC2?
 load_scores(PCA.2, 2, FALSE)
+```
+
+# Lasso Regression
+```{r}
+y <- cli$x54
+x <- cli %>% select(-c(x54, city, country, data_quality))
+x <- data.matrix(x)
+
+# Find lambda value
+cross_val_model <- cv.glmnet(x, y, alpha = 1)
+best_lamda <- cross_val_model$lambda.min
+best_lamda
+
+# Produce plot of test MSE by lambda value
+plot(cross_val_model)
+best_model <- glmnet(x, y, alpha = 1, lamda = best_lamda)
+y_pred = predict(best_model, s = best_lamda, newx = x)
+
+# Find SST and SSE
+sst <- sum((y- mean(y))^2)
+sse <- sum((y_pred - y)^2)
+
+#find R-Squared
+rsq <- 1 - sse/sst
+# Best model explains {rsq * 100}% of the variation in the response values of the training data
+rsq
+  
+
+
+# Which metrics are most important?
+# Extracts non-zero coefficients
+predictors <- coef(best_model, s = best_lamda)
+predictors <- data.matrix(predictors)
+predictors <- data.frame(predictors)
+predictors$Column <- row.names(predictors)
+predictors <- left_join(predictors, descriptions, by="Column")
+predictors <- filter(predictors, s1 > 0)
+gt::gt(predictors)
 ```
