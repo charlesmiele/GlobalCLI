@@ -1,4 +1,4 @@
-# Global Cost of Living
+# [Global Cost of Living](https://www.charlesmiele.com/CLI.html)
 
 Data Science Project by [Charles Miele](https://www.charlesmiele.com)
 
